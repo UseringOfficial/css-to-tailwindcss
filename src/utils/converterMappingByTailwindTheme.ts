@@ -1,9 +1,5 @@
 import type { Config } from 'tailwindcss';
-import type {
-  KeyValuePair,
-  RecursiveKeyValuePair,
-  ScreensConfig,
-} from 'tailwindcss/types/config';
+import type { KeyValuePair, RecursiveKeyValuePair, ScreensConfig } from 'tailwindcss/types/config';
 import type { ConverterMapping } from '../types/ConverterMapping';
 
 import { colord } from 'colord';
@@ -27,14 +23,9 @@ export function normalizeZeroSizeValue(value: string) {
   return value.trim() === '0px' ? '0' : value;
 }
 
-export function normalizeSizeValue(
-  sizeValue: string,
-  remInPx: number | undefined | null
-) {
+export function normalizeSizeValue(sizeValue: string, remInPx: number | undefined | null) {
   return normalizeZeroSizeValue(
-    normalizeNumbersInString(
-      remInPx != null ? remValueToPx(sizeValue, remInPx) : sizeValue
-    )
+    normalizeNumbersInString(remInPx != null ? remValueToPx(sizeValue, remInPx) : sizeValue),
   );
 }
 
@@ -44,11 +35,11 @@ export function normalizeAtRuleParams(atRuleParam: string) {
 
 function mapThemeTokens<V>(
   tokens: KeyValuePair<string, V>,
-  valueConverterFn: (tokenValue: V, tokenKey: string) => string | null
+  valueConverterFn: (tokenValue: V, tokenKey: string) => string | null,
 ) {
   const result: Record<string, string> = {};
 
-  Object.keys(tokens).forEach(tokenKey => {
+  Object.keys(tokens).forEach((tokenKey) => {
     const tokenValue = tokens[tokenKey] as V;
     const convertedTokenValue = valueConverterFn(tokenValue, tokenKey);
 
@@ -61,9 +52,7 @@ function mapThemeTokens<V>(
 }
 
 function isColorKey(key: string) {
-  return (
-    ['fill', 'stroke'].includes(key) || key.toLowerCase().includes('color')
-  );
+  return ['fill', 'stroke'].includes(key) || key.toLowerCase().includes('color');
 }
 
 function isSizeKey(key: string) {
@@ -115,12 +104,12 @@ function convertFontSizes(
           lineHeight: string;
           letterSpacing: string;
           fontWeight: string | number;
-        }>
+        }>,
       ]
   >,
-  remInPx?: number | null
+  remInPx?: number | null,
 ) {
-  return mapThemeTokens(fontSizes, fontSizeValue => {
+  return mapThemeTokens(fontSizes, (fontSizeValue) => {
     if (!fontSizeValue) {
       return null;
     }
@@ -138,10 +127,8 @@ function convertScreens(screens: ScreensConfig) {
     return {} as Record<string, string>;
   }
 
-  return mapThemeTokens(screens, screenValue => {
-    return screenValue
-      ? normalizeAtRuleParams(buildMediaQueryByScreen(screenValue))
-      : null;
+  return mapThemeTokens(screens, (screenValue) => {
+    return screenValue ? normalizeAtRuleParams(buildMediaQueryByScreen(screenValue)) : null;
   });
 }
 
@@ -173,17 +160,14 @@ function convertOtherThemeTokens(tokens: KeyValuePair | null | undefined) {
     : tokens;
 }
 
-export function converterMappingByTailwindTheme(
-  resolvedTailwindTheme: Config['theme'],
-  remInPx?: number | null
-) {
+export function converterMappingByTailwindTheme(resolvedTailwindTheme: Config['theme'], remInPx?: number | null) {
   const converterMapping = {} as ConverterMapping;
 
   if (!resolvedTailwindTheme) {
     return converterMapping;
   }
 
-  Object.keys(resolvedTailwindTheme as any).forEach(key => {
+  Object.keys(resolvedTailwindTheme as any).forEach((key) => {
     if (['keyframes', 'container', 'fontFamily'].includes(key)) {
       return;
     }

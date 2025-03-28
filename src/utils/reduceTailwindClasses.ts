@@ -78,11 +78,8 @@ class TailwindClassesReductionManager {
   }
 
   reduce() {
-    Object.keys(this.map).forEach(mapKey => {
-      this.recursiveResolveClasses(
-        this.map[mapKey],
-        this.resolvedClasses
-      ).forEach((_, value) => {
+    Object.keys(this.map).forEach((mapKey) => {
+      this.recursiveResolveClasses(this.map[mapKey], this.resolvedClasses).forEach((_, value) => {
         this.resolvedClasses.push(this.toTailwindClass(mapKey, value));
       });
     });
@@ -90,14 +87,9 @@ class TailwindClassesReductionManager {
     return this.resolvedClasses;
   }
 
-  protected recursiveSetValue(
-    key: string,
-    value: string,
-    targetObject: Record<string, any>
-  ) {
-    for (let objectKey in targetObject) {
-      if (!Object.prototype.hasOwnProperty.call(targetObject, objectKey))
-        continue;
+  protected recursiveSetValue(key: string, value: string, targetObject: Record<string, any>) {
+    for (const objectKey in targetObject) {
+      if (!Object.prototype.hasOwnProperty.call(targetObject, objectKey)) continue;
 
       const objectValue = targetObject[objectKey];
 
@@ -123,19 +115,13 @@ class TailwindClassesReductionManager {
     return false;
   }
 
-  protected recursiveSetValueToAllKeys(
-    value: string,
-    targetObject: Record<string, any>
-  ) {
-    Object.keys(targetObject).forEach(key => {
+  protected recursiveSetValueToAllKeys(value: string, targetObject: Record<string, any>) {
+    Object.keys(targetObject).forEach((key) => {
       this.recursiveSetValue(key, value, targetObject);
     });
   }
 
-  protected recursiveResolveClasses(
-    targetObject: Record<string, any>,
-    resolvedClasses: string[]
-  ) {
+  protected recursiveResolveClasses(targetObject: Record<string, any>, resolvedClasses: string[]) {
     let commonValuesMap: null | Map<string, string> = null;
 
     const intersectCommonValues = (valuesMap: Map<string, string>) => {
@@ -148,9 +134,7 @@ class TailwindClassesReductionManager {
             commonValuesMap?.set(commonValue, classPrefix);
           } else {
             commonValuesMap?.delete(commonValue);
-            resolvedClasses.push(
-              this.toTailwindClass(commonClassPrefix, commonValue)
-            );
+            resolvedClasses.push(this.toTailwindClass(commonClassPrefix, commonValue));
           }
         });
 
@@ -164,22 +148,17 @@ class TailwindClassesReductionManager {
       }
     };
 
-    Object.keys(targetObject).forEach(currentClassPrefix => {
+    Object.keys(targetObject).forEach((currentClassPrefix) => {
       const objectValue = targetObject[currentClassPrefix];
 
       if (isObject(objectValue)) {
-        const commonValuesMap = this.recursiveResolveClasses(
-          objectValue,
-          resolvedClasses
-        );
+        const commonValuesMap = this.recursiveResolveClasses(objectValue, resolvedClasses);
         commonValuesMap.forEach((_, value, map) => {
           map.set(value, currentClassPrefix);
         });
         intersectCommonValues(commonValuesMap);
       } else if (Array.isArray(objectValue)) {
-        intersectCommonValues(
-          new Map(objectValue.map(value => [value, currentClassPrefix]))
-        );
+        intersectCommonValues(new Map(objectValue.map((value) => [value, currentClassPrefix])));
       }
     });
 
@@ -226,7 +205,7 @@ class TailwindClassesReductionManager {
 export function reduceTailwindClasses(tailwindClasses: string[]) {
   const manager = new TailwindClassesReductionManager();
 
-  tailwindClasses.forEach(className => {
+  tailwindClasses.forEach((className) => {
     manager.appendClassName(className);
   });
 

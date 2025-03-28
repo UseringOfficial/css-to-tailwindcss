@@ -2,24 +2,15 @@ import type { AttributeSelector, Selector } from 'css-what';
 import type { Config } from 'tailwindcss';
 import type { ConverterMapping } from './types/ConverterMapping';
 
-import postcss, {
-  AcceptedPlugin,
-  AtRule,
-  Container,
-  Declaration,
-  Rule,
-  Root,
-  Document,
-} from 'postcss';
+import type { AcceptedPlugin, Container, Declaration, Rule, Root, Document } from 'postcss';
+import postcss, { AtRule } from 'postcss';
 import postcssSafeParser from 'postcss-safe-parser';
 import { parse, stringify, isTraversal } from 'css-what';
 
-import { TailwindNode, TailwindNodesManager } from './TailwindNodesManager';
+import type { TailwindNode } from './TailwindNodesManager';
+import { TailwindNodesManager } from './TailwindNodesManager';
 import { isAtRuleNode } from './utils/isAtRuleNode';
-import {
-  converterMappingByTailwindTheme,
-  normalizeAtRuleParams,
-} from './utils/converterMappingByTailwindTheme';
+import { converterMappingByTailwindTheme, normalizeAtRuleParams } from './utils/converterMappingByTailwindTheme';
 import {
   convertDeclarationValue,
   prepareArbitraryValue,
@@ -31,7 +22,8 @@ import { removeUnnecessarySpaces } from './utils/removeUnnecessarySpaces';
 import { reduceTailwindClasses } from './utils/reduceTailwindClasses';
 import { PSEUDOS_MAPPING } from './mappings/pseudos-mapping';
 import { detectIndent } from './utils/detectIndent';
-import { resolveConfig, ResolvedTailwindConfig } from './utils/resolveConfig';
+import type { ResolvedTailwindConfig } from './utils/resolveConfig';
+import { resolveConfig } from './utils/resolveConfig';
 
 export interface TailwindConverterConfig {
   remInPx?: number | null;
@@ -40,16 +32,12 @@ export interface TailwindConverterConfig {
   arbitraryPropertiesIsEnabled: boolean;
 }
 
-export interface ResolvedTailwindConverterConfig
-  extends TailwindConverterConfig {
+export interface ResolvedTailwindConverterConfig extends TailwindConverterConfig {
   tailwindConfig: ResolvedTailwindConfig;
   mapping: ConverterMapping;
 }
 
-export const DEFAULT_CONVERTER_CONFIG: Omit<
-  TailwindConverterConfig,
-  'tailwindConfig'
-> = {
+export const DEFAULT_CONVERTER_CONFIG: Omit<TailwindConverterConfig, 'tailwindConfig'> = {
   postCSSPlugins: [],
   arbitraryPropertiesIsEnabled: false,
 };
@@ -57,22 +45,14 @@ export const DEFAULT_CONVERTER_CONFIG: Omit<
 export class TailwindConverter {
   protected config: ResolvedTailwindConverterConfig;
 
-  constructor({
-    tailwindConfig,
-    ...converterConfig
-  }: Partial<TailwindConverterConfig> = {}) {
-    const resolvedTailwindConfig = resolveConfig(
-      tailwindConfig || ({ content: [] } as Config)
-    );
+  constructor({ tailwindConfig, ...converterConfig }: Partial<TailwindConverterConfig> = {}) {
+    const resolvedTailwindConfig = resolveConfig(tailwindConfig || ({ content: [] } as Config));
 
     this.config = {
       ...DEFAULT_CONVERTER_CONFIG,
       ...converterConfig,
       tailwindConfig: resolvedTailwindConfig,
-      mapping: converterMappingByTailwindTheme(
-        resolvedTailwindConfig.theme,
-        converterConfig.remInPx
-      ),
+      mapping: converterMappingByTailwindTheme(resolvedTailwindConfig.theme, converterConfig.remInPx),
     };
   }
 
@@ -82,7 +62,7 @@ export class TailwindConverter {
       parser: postcssSafeParser,
     });
 
-    parsed.root.walkRules(rule => {
+    parsed.root.walkRules((rule) => {
       const converted = this.convertRule(rule);
       if (converted) {
         nodesManager.mergeNode(converted);
@@ -90,13 +70,13 @@ export class TailwindConverter {
     });
 
     const nodes = nodesManager.getNodes();
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
       if (node.tailwindClasses.length) {
         node.rule.prepend(
           new AtRule({
             name: 'apply',
             params: node.tailwindClasses.join(' '),
-          })
+          }),
         );
       }
     });
@@ -112,7 +92,7 @@ export class TailwindConverter {
   protected cleanRaws(root: Root | Document) {
     root.raws.indent = detectIndent(root);
 
-    root.walkRules(node => {
+    root.walkRules((node) => {
       if (node.nodes?.length === 0) {
         node.remove();
       } else {
@@ -120,7 +100,7 @@ export class TailwindConverter {
       }
     });
 
-    root.walkAtRules(node => {
+    root.walkAtRules((node) => {
       if (node.nodes?.length === 0) {
         node.remove();
       } else {
@@ -132,7 +112,7 @@ export class TailwindConverter {
   protected convertRule(rule: Rule): TailwindNode | null {
     let tailwindClasses: string[] = [];
 
-    rule.walkDecls(declaration => {
+    rule.walkDecls((declaration) => {
       const converted = this.convertDeclarationToClasses(declaration);
 
       if (converted?.length) {
@@ -145,10 +125,10 @@ export class TailwindConverter {
       tailwindClasses = reduceTailwindClasses(tailwindClasses);
 
       if (this.config.tailwindConfig.prefix) {
-        tailwindClasses = tailwindClasses.map(className =>
+        tailwindClasses = tailwindClasses.map((className) =>
           className[0] === '[' // is "arbitrary property" class
             ? className
-            : `${this.config.tailwindConfig.prefix}${className}`
+            : `${this.config.tailwindConfig.prefix}${className}`,
         );
       }
 
@@ -159,30 +139,19 @@ export class TailwindConverter {
   }
 
   protected convertDeclarationToClasses(declaration: Declaration) {
-    let classes =
-      DECLARATION_CONVERTERS_MAPPING[declaration.prop]?.(
-        declaration,
-        this.config
-      ) || [];
+    const classes = DECLARATION_CONVERTERS_MAPPING[declaration.prop]?.(declaration, this.config) || [];
 
     if (classes.length === 0 && this.config.arbitraryPropertiesIsEnabled) {
-      return [
-        `[${declaration.prop}:${prepareArbitraryValue(declaration.value)}]`,
-      ];
+      return [`[${declaration.prop}:${prepareArbitraryValue(declaration.value)}]`];
     }
 
     return classes;
   }
 
-  protected makeTailwindNode(
-    rule: Rule,
-    tailwindClasses: string[]
-  ): TailwindNode {
-    let { baseSelector, classPrefix } = this.parseSelector(rule.selector);
+  protected makeTailwindNode(rule: Rule, tailwindClasses: string[]): TailwindNode {
+    const { baseSelector, classPrefix } = this.parseSelector(rule.selector);
 
-    const classPrefixByParentNodes = this.convertContainerToClassPrefix(
-      rule.parent
-    );
+    const classPrefixByParentNodes = this.convertContainerToClassPrefix(rule.parent);
 
     if (classPrefixByParentNodes) {
       return {
@@ -199,7 +168,7 @@ export class TailwindConverter {
       const isRootRule = key === baseSelector;
 
       return {
-        key: key,
+        key,
         rootRuleSelector: isRootRule ? baseSelector : null,
         originalRule: rule,
         classesPrefix: classPrefix,
@@ -277,10 +246,7 @@ export class TailwindConverter {
     return null;
   }
 
-  protected attributeSelectorToMappingKey(
-    selector: AttributeSelector,
-    from = 1
-  ) {
+  protected attributeSelectorToMappingKey(selector: AttributeSelector, from = 1) {
     const stringifiedSelector = stringify([[selector]]);
 
     return stringifiedSelector.substring(from, stringifiedSelector.length - 1);
@@ -308,21 +274,17 @@ export class TailwindConverter {
       currentContainer = currentContainer.parent;
     }
 
-    let mediaPrefixes = '',
-      supportsPrefixes = '';
+    let mediaPrefixes = '';
+    let supportsPrefixes = '';
     if (mediaParams.length) {
-      mediaPrefixes = this.convertMediaParamsToClassPrefix(
-        mediaParams.reverse()
-      );
+      mediaPrefixes = this.convertMediaParamsToClassPrefix(mediaParams.reverse());
       if (!mediaPrefixes) {
         return '';
       }
     }
 
     if (supportsParams.length) {
-      supportsPrefixes = this.convertSupportsParamsToClassPrefix(
-        supportsParams.reverse()
-      );
+      supportsPrefixes = this.convertSupportsParamsToClassPrefix(supportsParams.reverse());
       if (!supportsPrefixes) {
         return '';
       }
@@ -349,7 +311,7 @@ export class TailwindConverter {
           continue;
         }
 
-        let mapped = (MEDIA_PARAMS_MAPPING as any)[param.replace(/\s+/g, '')];
+        const mapped = (MEDIA_PARAMS_MAPPING as any)[param.replace(/\s+/g, '')];
         if (mapped) {
           modifiers.push(mapped);
           continue;
@@ -372,23 +334,17 @@ export class TailwindConverter {
 
     const classPrefix = modifiers.join(this.config.tailwindConfig.separator);
 
-    return classPrefix
-      ? classPrefix + this.config.tailwindConfig.separator
-      : '';
+    return classPrefix ? classPrefix + this.config.tailwindConfig.separator : '';
   }
 
   protected convertSupportsParamsToClassPrefix(supportParams: string[]) {
     const buildParams = supportParams.join(' and ');
     const classPrefix = convertDeclarationValue(
-      supportParams.length > 1
-        ? removeUnnecessarySpaces(buildParams)
-        : normalizeAtRuleParams(buildParams),
+      supportParams.length > 1 ? removeUnnecessarySpaces(buildParams) : normalizeAtRuleParams(buildParams),
       this.config.mapping.supports || {},
-      'supports'
+      'supports',
     );
 
-    return classPrefix
-      ? classPrefix + this.config.tailwindConfig.separator
-      : '';
+    return classPrefix ? classPrefix + this.config.tailwindConfig.separator : '';
   }
 }

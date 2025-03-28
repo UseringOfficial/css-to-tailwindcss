@@ -2,11 +2,7 @@ import type { Declaration } from 'postcss';
 import type { ResolvedTailwindConverterConfig } from '../TailwindConverter';
 
 import { UTILITIES_MAPPING } from './utilities-mapping';
-import {
-  normalizeColorValue,
-  normalizeSizeValue,
-  normalizeValue,
-} from '../utils/converterMappingByTailwindTheme';
+import { normalizeColorValue, normalizeSizeValue, normalizeValue } from '../utils/converterMappingByTailwindTheme';
 import { parseCSSFunctions } from '../utils/parseCSSFunctions';
 import { removeUnnecessarySpaces } from '../utils/removeUnnecessarySpaces';
 import { isCSSVariable } from '../utils/isCSSVariable';
@@ -15,13 +11,7 @@ export function prepareArbitraryValue(value: string) {
   return normalizeValue(value).replace(/_/g, '\\_').replace(/\s+/g, '_');
 }
 
-type CSSDataType =
-  | 'color'
-  | 'length'
-  | 'number'
-  | 'image'
-  | 'position'
-  | 'family-name';
+type CSSDataType = 'color' | 'length' | 'number' | 'image' | 'position' | 'family-name';
 
 export function convertDeclarationValue(
   value: string,
@@ -29,7 +19,7 @@ export function convertDeclarationValue(
   classPrefix: string,
   fallbackValue = value,
   fallbackClassPrefix = classPrefix,
-  cssDataType: CSSDataType | null = null
+  cssDataType: CSSDataType | null = null,
 ) {
   const normalizedValue = normalizeValue(value);
   const mappedValue = valuesMap[normalizedValue];
@@ -48,20 +38,13 @@ export function convertDeclarationValue(
   }
 
   if (cssDataType && isCSSVariable(arbitraryValue)) {
-    return [
-      `${fallbackClassPrefix}-[${
-        cssDataType ? `${cssDataType}:` : ''
-      }${arbitraryValue}]`,
-    ];
+    return [`${fallbackClassPrefix}-[${cssDataType ? `${cssDataType}:` : ''}${arbitraryValue}]`];
   }
 
   return [`${fallbackClassPrefix}-[${arbitraryValue}]`];
 }
 
-export function strictConvertDeclarationValue(
-  value: string,
-  valuesMap: Record<string, string>
-) {
+export function strictConvertDeclarationValue(value: string, valuesMap: Record<string, string>) {
   return valuesMap[value] ? [valuesMap[value]] : [];
 }
 
@@ -69,7 +52,7 @@ function convertColorDeclarationValue(
   declValue: string,
   valuesMap: Record<string, string>,
   classPrefix: string,
-  cssDataType: CSSDataType | null = null
+  cssDataType: CSSDataType | null = null,
 ) {
   return convertDeclarationValue(
     normalizeColorValue(declValue),
@@ -77,7 +60,7 @@ function convertColorDeclarationValue(
     classPrefix,
     declValue,
     classPrefix,
-    cssDataType
+    cssDataType,
   );
 }
 
@@ -87,11 +70,10 @@ function convertSizeDeclarationValue(
   classPrefix: string,
   remInPx: number | null | undefined,
   supportsNegativeValues = false,
-  cssDataType: CSSDataType | null = null
+  cssDataType: CSSDataType | null = null,
 ) {
   const normalizedValue = normalizeSizeValue(declValue, remInPx);
-  const isNegativeValue =
-    supportsNegativeValues && normalizedValue.startsWith('-');
+  const isNegativeValue = supportsNegativeValues && normalizedValue.startsWith('-');
 
   return convertDeclarationValue(
     isNegativeValue ? normalizedValue.substring(1) : normalizedValue,
@@ -99,15 +81,11 @@ function convertSizeDeclarationValue(
     isNegativeValue ? `-${classPrefix}` : classPrefix,
     declValue,
     classPrefix,
-    cssDataType
+    cssDataType,
   );
 }
 
-function convertBorderDeclarationValue(
-  value: string,
-  config: ResolvedTailwindConverterConfig,
-  classPrefix: string
-) {
+function convertBorderDeclarationValue(value: string, config: ResolvedTailwindConverterConfig, classPrefix: string) {
   const [width, style, ...colorArray] = value.split(/\s+/m);
   const color = colorArray.join(' ');
 
@@ -118,14 +96,7 @@ function convertBorderDeclarationValue(
       return [];
     }
     classes = classes.concat(
-      convertSizeDeclarationValue(
-        width,
-        config.mapping.borderWidth,
-        classPrefix,
-        config.remInPx,
-        false,
-        'length'
-      )
+      convertSizeDeclarationValue(width, config.mapping.borderWidth, classPrefix, config.remInPx, false, 'length'),
     );
   }
 
@@ -133,23 +104,14 @@ function convertBorderDeclarationValue(
     if (!config.tailwindConfig.corePlugins.borderStyle) {
       return [];
     }
-    classes = classes.concat(
-      strictConvertDeclarationValue(style, UTILITIES_MAPPING['border-style'])
-    );
+    classes = classes.concat(strictConvertDeclarationValue(style, UTILITIES_MAPPING['border-style']));
   }
 
   if (color) {
     if (!config.tailwindConfig.corePlugins.borderColor) {
       return [];
     }
-    classes = classes.concat(
-      convertColorDeclarationValue(
-        color,
-        config.mapping.borderColor,
-        classPrefix,
-        'color'
-      )
-    );
+    classes = classes.concat(convertColorDeclarationValue(color, config.mapping.borderColor, classPrefix, 'color'));
   }
 
   return classes;
@@ -178,35 +140,24 @@ export function convertComposedSpacingDeclarationValue(
     bottom: { valuesMapping: Record<string, string>; classPrefix: string };
     left: { valuesMapping: Record<string, string>; classPrefix: string };
   },
-  remInPx: number | null | undefined
+  remInPx: number | null | undefined,
 ) {
   const parsed = parseComposedSpacingValue(value);
   let classes: string[] = [];
 
-  (Object.keys(parsed) as ['top', 'right', 'bottom', 'left']).forEach(key => {
+  (Object.keys(parsed) as ['top', 'right', 'bottom', 'left']).forEach((key) => {
     const value = parsed[key];
     const { valuesMapping, classPrefix } = mapping[key] || {};
 
     if (value && valuesMapping && classPrefix) {
-      classes = classes.concat(
-        convertSizeDeclarationValue(
-          value,
-          valuesMapping,
-          classPrefix,
-          remInPx,
-          true
-        )
-      );
+      classes = classes.concat(convertSizeDeclarationValue(value, valuesMapping, classPrefix, remInPx, true));
     }
   });
 
   return classes;
 }
 
-type DeclarationConverter = (
-  declaration: Declaration,
-  config: ResolvedTailwindConverterConfig
-) => string[];
+type DeclarationConverter = (declaration: Declaration, config: ResolvedTailwindConverterConfig) => string[];
 
 interface DeclarationConvertersMapping {
   [property: string]: DeclarationConverter;
@@ -215,62 +166,37 @@ interface DeclarationConvertersMapping {
 export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
   'accent-color': (declaration, config) =>
     config.tailwindConfig.corePlugins.accentColor
-      ? convertColorDeclarationValue(
-          declaration.value,
-          config.mapping.accentColor,
-          'accent',
-          'color'
-        )
+      ? convertColorDeclarationValue(declaration.value, config.mapping.accentColor, 'accent', 'color')
       : [],
 
   'align-content': (declaration, config) =>
     config.tailwindConfig.corePlugins.alignContent
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['align-content']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['align-content'])
       : [],
 
   'align-items': (declaration, config) =>
     config.tailwindConfig.corePlugins.alignItems
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['align-items']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['align-items'])
       : [],
 
   'align-self': (declaration, config) =>
     config.tailwindConfig.corePlugins.alignSelf
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['align-self']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['align-self'])
       : [],
 
   animation: (declaration, config) =>
     config.tailwindConfig.corePlugins.animation
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.animation,
-          'animate'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.animation, 'animate')
       : [],
 
   appearance: (declaration, config) =>
     config.tailwindConfig.corePlugins.appearance
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['appearance']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING.appearance)
       : [],
 
   'aspect-ratio': (declaration, config) =>
     config.tailwindConfig.corePlugins.aspectRatio
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.aspectRatio,
-          'aspect'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.aspectRatio, 'aspect')
       : [],
 
   'backdrop-filter': (declaration, config) => {
@@ -280,33 +206,15 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
 
     let classes: string[] = [];
     const mappings: Record<string, any> = {
-      blur:
-        config.tailwindConfig.corePlugins.backdropBlur &&
-        config.mapping.backdropBlur,
-      brightness:
-        config.tailwindConfig.corePlugins.backdropBrightness &&
-        config.mapping.backdropBrightness,
-      contrast:
-        config.tailwindConfig.corePlugins.backdropContrast &&
-        config.mapping.backdropContrast,
-      grayscale:
-        config.tailwindConfig.corePlugins.backdropGrayscale &&
-        config.mapping.backdropGrayscale,
-      'hue-rotate':
-        config.tailwindConfig.corePlugins.backdropHueRotate &&
-        config.mapping.backdropHueRotate,
-      invert:
-        config.tailwindConfig.corePlugins.backdropInvert &&
-        config.mapping.backdropInvert,
-      opacity:
-        config.tailwindConfig.corePlugins.backdropOpacity &&
-        config.mapping.backdropOpacity,
-      saturate:
-        config.tailwindConfig.corePlugins.backdropSaturate &&
-        config.mapping.backdropSaturate,
-      sepia:
-        config.tailwindConfig.corePlugins.backdropSepia &&
-        config.mapping.backdropSepia,
+      blur: config.tailwindConfig.corePlugins.backdropBlur && config.mapping.backdropBlur,
+      brightness: config.tailwindConfig.corePlugins.backdropBrightness && config.mapping.backdropBrightness,
+      contrast: config.tailwindConfig.corePlugins.backdropContrast && config.mapping.backdropContrast,
+      grayscale: config.tailwindConfig.corePlugins.backdropGrayscale && config.mapping.backdropGrayscale,
+      'hue-rotate': config.tailwindConfig.corePlugins.backdropHueRotate && config.mapping.backdropHueRotate,
+      invert: config.tailwindConfig.corePlugins.backdropInvert && config.mapping.backdropInvert,
+      opacity: config.tailwindConfig.corePlugins.backdropOpacity && config.mapping.backdropOpacity,
+      saturate: config.tailwindConfig.corePlugins.backdropSaturate && config.mapping.backdropSaturate,
+      sepia: config.tailwindConfig.corePlugins.backdropSepia && config.mapping.backdropSepia,
     };
 
     parseCSSFunctions(declaration.value).every(({ name, value }) => {
@@ -325,7 +233,7 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           mapping,
           `backdrop-${name}`,
           config.remInPx,
-          name === 'hue-rotate'
+          name === 'hue-rotate',
         );
 
         if (currentClasses?.length) {
@@ -343,36 +251,22 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
 
   'background-attachment': (declaration, config) =>
     config.tailwindConfig.corePlugins.backgroundAttachment
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['background-attachment']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['background-attachment'])
       : [],
 
   'background-blend-mode': (declaration, config) =>
     config.tailwindConfig.corePlugins.backgroundBlendMode
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['background-blend-mode']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['background-blend-mode'])
       : [],
 
   'background-clip': (declaration, config) =>
     config.tailwindConfig.corePlugins.backgroundClip
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['background-clip']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['background-clip'])
       : [],
 
   'background-color': (declaration, config) =>
     config.tailwindConfig.corePlugins.backgroundColor
-      ? convertColorDeclarationValue(
-          declaration.value,
-          config.mapping.backgroundColor,
-          'bg',
-          'color'
-        )
+      ? convertColorDeclarationValue(declaration.value, config.mapping.backgroundColor, 'bg', 'color')
       : [],
 
   'background-image': (declaration, config) =>
@@ -383,16 +277,13 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           'bg',
           declaration.value,
           'bg',
-          'image'
+          'image',
         )
       : [],
 
   'background-origin': (declaration, config) =>
     config.tailwindConfig.corePlugins.backgroundOrigin
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['background-origin']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['background-origin'])
       : [],
 
   'background-position': (declaration, config) =>
@@ -403,16 +294,13 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           'bg',
           declaration.value,
           'bg',
-          'position'
+          'position',
         )
       : [],
 
   'background-repeat': (declaration, config) =>
     config.tailwindConfig.corePlugins.backgroundRepeat
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['background-repeat']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['background-repeat'])
       : [],
 
   'background-size': (declaration, config) =>
@@ -423,44 +311,27 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           'bg',
           config.remInPx,
           false,
-          'length'
+          'length',
         )
       : [],
 
-  border: (declaration, config) =>
-    convertBorderDeclarationValue(declaration.value, config, 'border'),
+  border: (declaration, config) => convertBorderDeclarationValue(declaration.value, config, 'border'),
 
-  'border-bottom': (declaration, config) =>
-    convertBorderDeclarationValue(declaration.value, config, 'border-b'),
+  'border-bottom': (declaration, config) => convertBorderDeclarationValue(declaration.value, config, 'border-b'),
 
   'border-bottom-color': (declaration, config) =>
     config.tailwindConfig.corePlugins.borderColor
-      ? convertColorDeclarationValue(
-          declaration.value,
-          config.mapping.borderColor,
-          'border-b',
-          'color'
-        )
+      ? convertColorDeclarationValue(declaration.value, config.mapping.borderColor, 'border-b', 'color')
       : [],
 
   'border-bottom-left-radius': (declaration, config) =>
     config.tailwindConfig.corePlugins.borderRadius
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.borderRadius,
-          'rounded-bl',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.borderRadius, 'rounded-bl', config.remInPx)
       : [],
 
   'border-bottom-right-radius': (declaration, config) =>
     config.tailwindConfig.corePlugins.borderRadius
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.borderRadius,
-          'rounded-br',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.borderRadius, 'rounded-br', config.remInPx)
       : [],
 
   // 'border-bottom-style': (declaration, config) =>
@@ -474,39 +345,25 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           'border-b',
           config.remInPx,
           false,
-          'length'
+          'length',
         )
       : [],
 
   'border-collapse': (declaration, config) =>
     config.tailwindConfig.corePlugins.borderCollapse
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['border-collapse']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['border-collapse'])
       : [],
 
   'border-color': (declaration, config) =>
     config.tailwindConfig.corePlugins.borderColor
-      ? convertColorDeclarationValue(
-          declaration.value,
-          config.mapping.borderColor,
-          'border',
-          'color'
-        )
+      ? convertColorDeclarationValue(declaration.value, config.mapping.borderColor, 'border', 'color')
       : [],
 
-  'border-left': (declaration, config) =>
-    convertBorderDeclarationValue(declaration.value, config, 'border-l'),
+  'border-left': (declaration, config) => convertBorderDeclarationValue(declaration.value, config, 'border-l'),
 
   'border-left-color': (declaration, config) =>
     config.tailwindConfig.corePlugins.borderColor
-      ? convertColorDeclarationValue(
-          declaration.value,
-          config.mapping.borderColor,
-          'border-l',
-          'color'
-        )
+      ? convertColorDeclarationValue(declaration.value, config.mapping.borderColor, 'border-l', 'color')
       : [],
 
   // 'border-left-style': (declaration, config) =>
@@ -520,31 +377,20 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           'border-l',
           config.remInPx,
           false,
-          'length'
+          'length',
         )
       : [],
 
   'border-radius': (declaration, config) =>
     config.tailwindConfig.corePlugins.borderRadius
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.borderRadius,
-          'rounded',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.borderRadius, 'rounded', config.remInPx)
       : [],
 
-  'border-right': (declaration, config) =>
-    convertBorderDeclarationValue(declaration.value, config, 'border-r'),
+  'border-right': (declaration, config) => convertBorderDeclarationValue(declaration.value, config, 'border-r'),
 
   'border-right-color': (declaration, config) =>
     config.tailwindConfig.corePlugins.borderColor
-      ? convertColorDeclarationValue(
-          declaration.value,
-          config.mapping.borderColor,
-          'border-r',
-          'color'
-        )
+      ? convertColorDeclarationValue(declaration.value, config.mapping.borderColor, 'border-r', 'color')
       : [],
 
   // 'border-right-style': (declaration, config) =>
@@ -558,59 +404,35 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           'border-r',
           config.remInPx,
           false,
-          'length'
+          'length',
         )
       : [],
 
   'border-spacing': (declaration, config) =>
     config.tailwindConfig.corePlugins.borderSpacing
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.borderSpacing,
-          'border-spacing',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.borderSpacing, 'border-spacing', config.remInPx)
       : [],
 
   'border-style': (declaration, config) =>
     config.tailwindConfig.corePlugins.borderStyle
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['border-style']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['border-style'])
       : [],
 
-  'border-top': (declaration, config) =>
-    convertBorderDeclarationValue(declaration.value, config, 'border-t'),
+  'border-top': (declaration, config) => convertBorderDeclarationValue(declaration.value, config, 'border-t'),
 
   'border-top-color': (declaration, config) =>
     config.tailwindConfig.corePlugins.borderColor
-      ? convertColorDeclarationValue(
-          declaration.value,
-          config.mapping.borderColor,
-          'border-t',
-          'color'
-        )
+      ? convertColorDeclarationValue(declaration.value, config.mapping.borderColor, 'border-t', 'color')
       : [],
 
   'border-top-left-radius': (declaration, config) =>
     config.tailwindConfig.corePlugins.borderRadius
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.borderRadius,
-          'rounded-tl',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.borderRadius, 'rounded-tl', config.remInPx)
       : [],
 
   'border-top-right-radius': (declaration, config) =>
     config.tailwindConfig.corePlugins.borderRadius
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.borderRadius,
-          'rounded-tr',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.borderRadius, 'rounded-tr', config.remInPx)
       : [],
 
   // 'border-top-style': (declaration, config) =>
@@ -624,7 +446,7 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           'border-t',
           config.remInPx,
           false,
-          'length'
+          'length',
         )
       : [],
 
@@ -636,151 +458,88 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           'border',
           config.remInPx,
           false,
-          'length'
+          'length',
         )
       : [],
 
   bottom: (declaration, config) =>
     config.tailwindConfig.corePlugins.position
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.inset,
-          'bottom',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.inset, 'bottom', config.remInPx, true)
       : [],
 
   'box-decoration-break': (declaration, config) =>
     config.tailwindConfig.corePlugins.position
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['box-decoration-break']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['box-decoration-break'])
       : [],
 
   'box-shadow': (declaration, config) =>
     config.tailwindConfig.corePlugins.boxShadow
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.boxShadow,
-          'shadow'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.boxShadow, 'shadow')
       : [],
 
   'box-sizing': (declaration, config) =>
     config.tailwindConfig.corePlugins.boxSizing
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['box-sizing']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['box-sizing'])
       : [],
 
   'break-after': (declaration, config) =>
     config.tailwindConfig.corePlugins.breakAfter
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['break-after']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['break-after'])
       : [],
 
   'break-before': (declaration, config) =>
     config.tailwindConfig.corePlugins.breakBefore
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['break-before']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['break-before'])
       : [],
 
   'break-inside': (declaration, config) =>
     config.tailwindConfig.corePlugins.breakInside
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['break-inside']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['break-inside'])
       : [],
 
   'caret-color': (declaration, config) =>
     config.tailwindConfig.corePlugins.caretColor
-      ? convertColorDeclarationValue(
-          declaration.value,
-          config.mapping.caretColor,
-          'caret',
-          'color'
-        )
+      ? convertColorDeclarationValue(declaration.value, config.mapping.caretColor, 'caret', 'color')
       : [],
 
   clear: (declaration, config) =>
     config.tailwindConfig.corePlugins.clear
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['clear']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING.clear)
       : [],
 
   color: (declaration, config) =>
     config.tailwindConfig.corePlugins.textColor
-      ? convertColorDeclarationValue(
-          declaration.value,
-          config.mapping.textColor,
-          'text',
-          'color'
-        )
+      ? convertColorDeclarationValue(declaration.value, config.mapping.textColor, 'text', 'color')
       : [],
 
   'column-gap': (declaration, config) =>
     config.tailwindConfig.corePlugins.gap
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.gap,
-          'gap-x',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.gap, 'gap-x', config.remInPx)
       : [],
 
   columns: (declaration, config) =>
     config.tailwindConfig.corePlugins.columns
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.columns,
-          'columns',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.columns, 'columns', config.remInPx)
       : [],
 
   content: (declaration, config) =>
     config.tailwindConfig.corePlugins.content
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.content,
-          'content'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.content, 'content')
       : [],
 
   cursor: (declaration, config) =>
     config.tailwindConfig.corePlugins.cursor
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.cursor,
-          'cursor'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.cursor, 'cursor')
       : [],
 
   display: (declaration, config) =>
     config.tailwindConfig.corePlugins.display
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['display']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING.display)
       : [],
 
   fill: (declaration, config) =>
     config.tailwindConfig.corePlugins.fill
-      ? convertColorDeclarationValue(
-          declaration.value,
-          config.mapping.fill,
-          'fill'
-        )
+      ? convertColorDeclarationValue(declaration.value, config.mapping.fill, 'fill')
       : [],
 
   filter: (declaration, config) => {
@@ -791,20 +550,13 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
     let classes: string[] = [];
     const mappings: Record<string, any> = {
       blur: config.tailwindConfig.corePlugins.blur && config.mapping.blur,
-      brightness:
-        config.tailwindConfig.corePlugins.brightness &&
-        config.mapping.brightness,
-      contrast:
-        config.tailwindConfig.corePlugins.contrast && config.mapping.contrast,
-      grayscale:
-        config.tailwindConfig.corePlugins.grayscale && config.mapping.grayscale,
-      'hue-rotate':
-        config.tailwindConfig.corePlugins.hueRotate && config.mapping.hueRotate,
+      brightness: config.tailwindConfig.corePlugins.brightness && config.mapping.brightness,
+      contrast: config.tailwindConfig.corePlugins.contrast && config.mapping.contrast,
+      grayscale: config.tailwindConfig.corePlugins.grayscale && config.mapping.grayscale,
+      'hue-rotate': config.tailwindConfig.corePlugins.hueRotate && config.mapping.hueRotate,
       invert: config.tailwindConfig.corePlugins.invert && config.mapping.invert,
-      opacity:
-        config.tailwindConfig.corePlugins.opacity && config.mapping.opacity,
-      saturate:
-        config.tailwindConfig.corePlugins.saturate && config.mapping.saturate,
+      opacity: config.tailwindConfig.corePlugins.opacity && config.mapping.opacity,
+      saturate: config.tailwindConfig.corePlugins.saturate && config.mapping.saturate,
       sepia: config.tailwindConfig.corePlugins.sepia && config.mapping.sepia,
       // 'drop-shadow': config.tailwindConfig.corePlugins.dropShadow && config.mapping.dropShadow,
     };
@@ -820,13 +572,7 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
       if (mapping) {
         delete mapping[name];
 
-        const currentClasses = convertSizeDeclarationValue(
-          value,
-          mapping,
-          name,
-          config.remInPx,
-          name === 'hue-rotate'
-        );
+        const currentClasses = convertSizeDeclarationValue(value, mapping, name, config.remInPx, name === 'hue-rotate');
 
         if (currentClasses?.length) {
           classes = classes.concat(currentClasses);
@@ -846,115 +592,70 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
       return [];
     }
 
-    let classes = convertDeclarationValue(
-      declaration.value,
-      config.mapping.flex,
-      'flex',
-      ''
-    );
+    const classes = convertDeclarationValue(declaration.value, config.mapping.flex, 'flex', '');
 
     if (classes.length) {
       return classes;
     }
 
-    const [flexGrow, flexShrink = '1', flexBasis = '0%'] = declaration.value
-      .trim()
-      .split(/\s+/m);
+    const [flexGrow, flexShrink = '1', flexBasis = '0%'] = declaration.value.trim().split(/\s+/m);
 
     return convertDeclarationValue(
       `${flexGrow} ${flexShrink} ${flexBasis}`,
       config.mapping.flex,
       'flex',
-      declaration.value
+      declaration.value,
     );
   },
 
   'flex-basis': (declaration, config) =>
     config.tailwindConfig.corePlugins.flexBasis
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.flexBasis,
-          'basis',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.flexBasis, 'basis', config.remInPx)
       : [],
 
   'flex-direction': (declaration, config) =>
     config.tailwindConfig.corePlugins.flexDirection
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['flex-direction']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['flex-direction'])
       : [],
 
   'flex-grow': (declaration, config) =>
     config.tailwindConfig.corePlugins.flexGrow
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.flexGrow,
-          'grow'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.flexGrow, 'grow')
       : [],
 
   'flex-shrink': (declaration, config) =>
     config.tailwindConfig.corePlugins.flexShrink
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.flexShrink,
-          'shrink'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.flexShrink, 'shrink')
       : [],
 
   'flex-wrap': (declaration, config) =>
     config.tailwindConfig.corePlugins.flexWrap
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['flex-wrap']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['flex-wrap'])
       : [],
 
   float: (declaration, config) =>
     config.tailwindConfig.corePlugins.float
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['float']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING.float)
       : [],
 
   'font-size': (declaration, config) =>
     config.tailwindConfig.corePlugins.fontSize
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.fontSize,
-          'text',
-          config.remInPx,
-          false,
-          'length'
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.fontSize, 'text', config.remInPx, false, 'length')
       : [],
 
   'font-smoothing': (declaration, config) =>
     config.tailwindConfig.corePlugins.fontSmoothing
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['font-smoothing']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['font-smoothing'])
       : [],
 
   'font-style': (declaration, config) =>
     config.tailwindConfig.corePlugins.fontStyle
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['font-style']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['font-style'])
       : [],
 
   'font-variant-numeric': (declaration, config) =>
     config.tailwindConfig.corePlugins.fontVariantNumeric
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['font-variant-numeric']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['font-variant-numeric'])
       : [],
 
   'font-weight': (declaration, config) =>
@@ -965,248 +666,138 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           'font',
           declaration.value,
           'font',
-          'number'
+          'number',
         )
       : [],
 
   gap: (declaration, config) =>
     config.tailwindConfig.corePlugins.gap
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.gap,
-          'gap',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.gap, 'gap', config.remInPx)
       : [],
 
   'grid-auto-columns': (declaration, config) =>
     config.tailwindConfig.corePlugins.gridAutoColumns
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.gridAutoColumns,
-          'auto-cols'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.gridAutoColumns, 'auto-cols')
       : [],
 
   'grid-auto-flow': (declaration, config) =>
     config.tailwindConfig.corePlugins.gridAutoFlow
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['grid-auto-flow']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['grid-auto-flow'])
       : [],
 
   'grid-auto-rows': (declaration, config) =>
     config.tailwindConfig.corePlugins.gridAutoRows
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.gridAutoRows,
-          'auto-rows'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.gridAutoRows, 'auto-rows')
       : [],
 
   'grid-column': (declaration, config) =>
     config.tailwindConfig.corePlugins.gridColumn
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.gridColumn,
-          'col'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.gridColumn, 'col')
       : [],
 
   'grid-column-end': (declaration, config) =>
     config.tailwindConfig.corePlugins.gridColumnEnd
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.gridColumnEnd,
-          'col-end'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.gridColumnEnd, 'col-end')
       : [],
 
   'grid-column-gap': (declaration, config) =>
     config.tailwindConfig.corePlugins.gap
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.gap,
-          'gap-x',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.gap, 'gap-x', config.remInPx)
       : [],
 
   'grid-column-start': (declaration, config) =>
     config.tailwindConfig.corePlugins.gridColumnStart
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.gridColumnStart,
-          'col-start'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.gridColumnStart, 'col-start')
       : [],
 
   'grid-gap': (declaration, config) =>
     config.tailwindConfig.corePlugins.gap
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.gap,
-          'gap',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.gap, 'gap', config.remInPx)
       : [],
 
   'grid-row': (declaration, config) =>
     config.tailwindConfig.corePlugins.gridRow
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.gridRow,
-          'row'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.gridRow, 'row')
       : [],
 
   'grid-row-end': (declaration, config) =>
     config.tailwindConfig.corePlugins.gridRowEnd
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.gridRowEnd,
-          'row-end'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.gridRowEnd, 'row-end')
       : [],
 
   'grid-row-gap': (declaration, config) =>
     config.tailwindConfig.corePlugins.gap
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.gap,
-          'gap-y',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.gap, 'gap-y', config.remInPx)
       : [],
 
   'grid-row-start': (declaration, config) =>
     config.tailwindConfig.corePlugins.gridRowStart
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.gridRowStart,
-          'row-start'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.gridRowStart, 'row-start')
       : [],
 
   'grid-template-columns': (declaration, config) =>
     config.tailwindConfig.corePlugins.gridTemplateColumns
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.gridTemplateColumns,
-          'grid-cols'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.gridTemplateColumns, 'grid-cols')
       : [],
 
   'grid-template-rows': (declaration, config) =>
     config.tailwindConfig.corePlugins.gridTemplateRows
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.gridTemplateRows,
-          'grid-rows'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.gridTemplateRows, 'grid-rows')
       : [],
 
   height: (declaration, config) =>
     config.tailwindConfig.corePlugins.height
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.height,
-          'h',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.height, 'h', config.remInPx)
       : [],
 
   inset: (declaration, config) =>
     config.tailwindConfig.corePlugins.inset
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.inset,
-          'inset',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.inset, 'inset', config.remInPx, true)
       : [],
 
   isolation: (declaration, config) =>
     config.tailwindConfig.corePlugins.isolation
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['isolation']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING.isolation)
       : [],
 
   'justify-content': (declaration, config) =>
     config.tailwindConfig.corePlugins.justifyContent
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['justify-content']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['justify-content'])
       : [],
 
   'justify-items': (declaration, config) =>
     config.tailwindConfig.corePlugins.justifyItems
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['justify-items']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['justify-items'])
       : [],
 
   'justify-self': (declaration, config) =>
     config.tailwindConfig.corePlugins.justifySelf
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['justify-self']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['justify-self'])
       : [],
 
   left: (declaration, config) =>
     config.tailwindConfig.corePlugins.position
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.inset,
-          'left',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.inset, 'left', config.remInPx, true)
       : [],
 
   'letter-spacing': (declaration, config) =>
     config.tailwindConfig.corePlugins.letterSpacing
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.letterSpacing,
-          'tracking',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.letterSpacing, 'tracking', config.remInPx, true)
       : [],
 
   'line-height': (declaration, config) =>
     config.tailwindConfig.corePlugins.lineHeight
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.lineHeight,
-          'leading',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.lineHeight, 'leading', config.remInPx)
       : [],
 
   'list-style-position': (declaration, config) =>
     config.tailwindConfig.corePlugins.listStylePosition
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['list-style-position']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['list-style-position'])
       : [],
 
   'list-style-type': (declaration, config) =>
     config.tailwindConfig.corePlugins.listStyleType
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.listStyleType,
-          'list'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.listStyleType, 'list')
       : [],
 
   margin: (declaration, config) =>
@@ -1219,155 +810,83 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
             bottom: { valuesMapping: config.mapping.margin, classPrefix: 'mb' },
             left: { valuesMapping: config.mapping.margin, classPrefix: 'ml' },
           },
-          config.remInPx
+          config.remInPx,
         )
       : [],
 
   'margin-bottom': (declaration, config) =>
     config.tailwindConfig.corePlugins.margin
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.margin,
-          'mb',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.margin, 'mb', config.remInPx, true)
       : [],
 
   'margin-left': (declaration, config) =>
     config.tailwindConfig.corePlugins.margin
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.margin,
-          'ml',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.margin, 'ml', config.remInPx, true)
       : [],
 
   'margin-right': (declaration, config) =>
     config.tailwindConfig.corePlugins.margin
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.margin,
-          'mr',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.margin, 'mr', config.remInPx, true)
       : [],
 
   'margin-top': (declaration, config) =>
     config.tailwindConfig.corePlugins.margin
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.margin,
-          'mt',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.margin, 'mt', config.remInPx, true)
       : [],
 
   'max-height': (declaration, config) =>
     config.tailwindConfig.corePlugins.maxHeight
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.maxHeight,
-          'max-h',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.maxHeight, 'max-h', config.remInPx)
       : [],
 
   'max-width': (declaration, config) =>
     config.tailwindConfig.corePlugins.maxWidth
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.maxWidth,
-          'max-w',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.maxWidth, 'max-w', config.remInPx)
       : [],
 
   'min-height': (declaration, config) =>
     config.tailwindConfig.corePlugins.minHeight
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.minHeight,
-          'min-h',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.minHeight, 'min-h', config.remInPx)
       : [],
 
   'min-width': (declaration, config) =>
     config.tailwindConfig.corePlugins.minWidth
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.minWidth,
-          'min-w',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.minWidth, 'min-w', config.remInPx)
       : [],
 
   'mix-blend-mode': (declaration, config) =>
     config.tailwindConfig.corePlugins.mixBlendMode
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['mix-blend-mode']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['mix-blend-mode'])
       : [],
 
   'object-fit': (declaration, config) =>
     config.tailwindConfig.corePlugins.objectFit
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['object-fit']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['object-fit'])
       : [],
 
   'object-position': (declaration, config) =>
     config.tailwindConfig.corePlugins.objectPosition
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.objectPosition,
-          'object'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.objectPosition, 'object')
       : [],
 
   opacity: (declaration, config) =>
     config.tailwindConfig.corePlugins.opacity
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.opacity,
-          'opacity'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.opacity, 'opacity')
       : [],
 
   order: (declaration, config) =>
     config.tailwindConfig.corePlugins.order
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.order,
-          'order',
-          null,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.order, 'order', null, true)
       : [],
 
   outline: (declaration, config) =>
     config.tailwindConfig.corePlugins.outlineStyle
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['outline']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING.outline)
       : [],
 
   'outline-color': (declaration, config) =>
     config.tailwindConfig.corePlugins.outlineColor
-      ? convertColorDeclarationValue(
-          declaration.value,
-          config.mapping.outlineColor,
-          'outline',
-          'color'
-        )
+      ? convertColorDeclarationValue(declaration.value, config.mapping.outlineColor, 'outline', 'color')
       : [],
 
   'outline-offset': (declaration, config) =>
@@ -1378,16 +897,13 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           'outline-offset',
           config.remInPx,
           true,
-          'length'
+          'length',
         )
       : [],
 
   'outline-style': (declaration, config) =>
     config.tailwindConfig.corePlugins.outlineStyle
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['outline-style']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['outline-style'])
       : [],
 
   'outline-width': (declaration, config) =>
@@ -1398,62 +914,41 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           'outline',
           config.remInPx,
           false,
-          'length'
+          'length',
         )
       : [],
 
   overflow: (declaration, config) =>
     config.tailwindConfig.corePlugins.overflow
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['overflow']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING.overflow)
       : [],
 
   'overflow-wrap': (declaration, config) =>
     config.tailwindConfig.corePlugins.wordBreak
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['overflow-wrap']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['overflow-wrap'])
       : [],
 
   'overflow-x': (declaration, config) =>
     config.tailwindConfig.corePlugins.overflow
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['overflow-x']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['overflow-x'])
       : [],
 
   'overflow-y': (declaration, config) =>
     config.tailwindConfig.corePlugins.overflow
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['overflow-y']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['overflow-y'])
       : [],
 
   'overscroll-behavior': (declaration, config) =>
     config.tailwindConfig.corePlugins.overscrollBehavior
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['overscroll-behavior']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['overscroll-behavior'])
       : [],
   'overscroll-behavior-x': (declaration, config) =>
     config.tailwindConfig.corePlugins.overscrollBehavior
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['overscroll-behavior-x']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['overscroll-behavior-x'])
       : [],
   'overscroll-behavior-y': (declaration, config) =>
     config.tailwindConfig.corePlugins.overscrollBehavior
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['overscroll-behavior-y']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['overscroll-behavior-y'])
       : [],
 
   padding: (declaration, config) =>
@@ -1469,149 +964,88 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
             },
             left: { valuesMapping: config.mapping.padding, classPrefix: 'pl' },
           },
-          config.remInPx
+          config.remInPx,
         )
       : [],
 
   'padding-bottom': (declaration, config) =>
     config.tailwindConfig.corePlugins.padding
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.padding,
-          'pb',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.padding, 'pb', config.remInPx)
       : [],
 
   'padding-left': (declaration, config) =>
     config.tailwindConfig.corePlugins.padding
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.padding,
-          'pl',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.padding, 'pl', config.remInPx)
       : [],
 
   'padding-right': (declaration, config) =>
     config.tailwindConfig.corePlugins.padding
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.padding,
-          'pr',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.padding, 'pr', config.remInPx)
       : [],
 
   'padding-top': (declaration, config) =>
     config.tailwindConfig.corePlugins.padding
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.padding,
-          'pt',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.padding, 'pt', config.remInPx)
       : [],
 
   'page-break-after': (declaration, config) =>
     config.tailwindConfig.corePlugins.breakAfter
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['break-after']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['break-after'])
       : [],
 
   'page-break-before': (declaration, config) =>
     config.tailwindConfig.corePlugins.breakBefore
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['break-before']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['break-before'])
       : [],
 
   'page-break-inside': (declaration, config) =>
     config.tailwindConfig.corePlugins.breakInside
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['break-inside']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['break-inside'])
       : [],
 
   'place-content': (declaration, config) =>
     config.tailwindConfig.corePlugins.placeContent
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['place-content']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['place-content'])
       : [],
 
   'place-items': (declaration, config) =>
     config.tailwindConfig.corePlugins.placeItems
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['place-items']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['place-items'])
       : [],
 
   'place-self': (declaration, config) =>
     config.tailwindConfig.corePlugins.placeSelf
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['place-self']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['place-self'])
       : [],
 
   'pointer-events': (declaration, config) =>
     config.tailwindConfig.corePlugins.pointerEvents
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['pointer-events']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['pointer-events'])
       : [],
 
   position: (declaration, config) =>
     config.tailwindConfig.corePlugins.position
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['position']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING.position)
       : [],
 
   resize: (declaration, config) =>
     config.tailwindConfig.corePlugins.resize
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['resize']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING.resize)
       : [],
 
   right: (declaration, config) =>
     config.tailwindConfig.corePlugins.position
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.inset,
-          'right',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.inset, 'right', config.remInPx, true)
       : [],
 
   'row-gap': (declaration, config) =>
     config.tailwindConfig.corePlugins.gap
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.gap,
-          'gap-y',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.gap, 'gap-y', config.remInPx)
       : [],
 
   'scroll-behavior': (declaration, config) =>
     config.tailwindConfig.corePlugins.scrollBehavior
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['scroll-behavior']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['scroll-behavior'])
       : [],
 
   'scroll-margin': (declaration, config) =>
@@ -1636,52 +1070,28 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
               classPrefix: 'scroll-ml',
             },
           },
-          config.remInPx
+          config.remInPx,
         )
       : [],
 
   'scroll-margin-bottom': (declaration, config) =>
     config.tailwindConfig.corePlugins.scrollMargin
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.scrollMargin,
-          'scroll-mb',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.scrollMargin, 'scroll-mb', config.remInPx, true)
       : [],
 
   'scroll-margin-left': (declaration, config) =>
     config.tailwindConfig.corePlugins.scrollMargin
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.scrollMargin,
-          'scroll-ml',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.scrollMargin, 'scroll-ml', config.remInPx, true)
       : [],
 
   'scroll-margin-right': (declaration, config) =>
     config.tailwindConfig.corePlugins.scrollMargin
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.scrollMargin,
-          'scroll-mr',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.scrollMargin, 'scroll-mr', config.remInPx, true)
       : [],
 
   'scroll-margin-top': (declaration, config) =>
     config.tailwindConfig.corePlugins.scrollMargin
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.scrollMargin,
-          'scroll-mt',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.scrollMargin, 'scroll-mt', config.remInPx, true)
       : [],
 
   'scroll-padding': (declaration, config) =>
@@ -1706,82 +1116,48 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
               classPrefix: 'scroll-pl',
             },
           },
-          config.remInPx
+          config.remInPx,
         )
       : [],
 
   'scroll-padding-bottom': (declaration, config) =>
     config.tailwindConfig.corePlugins.scrollPadding
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.scrollPadding,
-          'scroll-pb',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.scrollPadding, 'scroll-pb', config.remInPx)
       : [],
 
   'scroll-padding-left': (declaration, config) =>
     config.tailwindConfig.corePlugins.scrollPadding
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.scrollPadding,
-          'scroll-pl',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.scrollPadding, 'scroll-pl', config.remInPx)
       : [],
 
   'scroll-padding-right': (declaration, config) =>
     config.tailwindConfig.corePlugins.scrollPadding
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.scrollPadding,
-          'scroll-pr',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.scrollPadding, 'scroll-pr', config.remInPx)
       : [],
 
   'scroll-padding-top': (declaration, config) =>
     config.tailwindConfig.corePlugins.scrollPadding
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.scrollPadding,
-          'scroll-pt',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.scrollPadding, 'scroll-pt', config.remInPx)
       : [],
 
   'scroll-snap-align': (declaration, config) =>
     config.tailwindConfig.corePlugins.scrollSnapAlign
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['scroll-snap-align']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['scroll-snap-align'])
       : [],
 
   'scroll-snap-type': (declaration, config) =>
     config.tailwindConfig.corePlugins.scrollSnapType
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['scroll-snap-type']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['scroll-snap-type'])
       : [],
 
   'scroll-snap-stop': (declaration, config) =>
     config.tailwindConfig.corePlugins.scrollSnapStop
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['scroll-snap-stop']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['scroll-snap-stop'])
       : [],
 
   stroke: (declaration, config) =>
     config.tailwindConfig.corePlugins.stroke
-      ? convertColorDeclarationValue(
-          declaration.value,
-          config.mapping.stroke,
-          'stroke',
-          'color'
-        )
+      ? convertColorDeclarationValue(declaration.value, config.mapping.stroke, 'stroke', 'color')
       : [],
 
   'stroke-width': (declaration, config) =>
@@ -1792,24 +1168,18 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           'stroke',
           config.remInPx,
           false,
-          'length'
+          'length',
         )
       : [],
 
   'table-layout': (declaration, config) =>
     config.tailwindConfig.corePlugins.tableLayout
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['table-layout']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['table-layout'])
       : [],
 
   'text-align': (declaration, config) =>
     config.tailwindConfig.corePlugins.textAlign
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['text-align']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['text-align'])
       : [],
 
   'text-decoration': (declaration, config) => {
@@ -1819,37 +1189,23 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
 
     const parsed = declaration.value.trim().split(/\s+/m);
     return parsed.length === 1
-      ? strictConvertDeclarationValue(
-          parsed[0],
-          UTILITIES_MAPPING['text-decoration-line']
-        )
+      ? strictConvertDeclarationValue(parsed[0], UTILITIES_MAPPING['text-decoration-line'])
       : [];
   },
 
   'text-decoration-color': (declaration, config) =>
     config.tailwindConfig.corePlugins.textDecorationColor
-      ? convertColorDeclarationValue(
-          declaration.value,
-          config.mapping.textDecorationColor,
-          'decoration',
-          'color'
-        )
+      ? convertColorDeclarationValue(declaration.value, config.mapping.textDecorationColor, 'decoration', 'color')
       : [],
 
   'text-decoration-line': (declaration, config) =>
     config.tailwindConfig.corePlugins.textDecoration
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['text-decoration-line']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['text-decoration-line'])
       : [],
 
   'text-decoration-style': (declaration, config) =>
     config.tailwindConfig.corePlugins.textDecorationStyle
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['text-decoration-style']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['text-decoration-style'])
       : [],
 
   'text-decoration-thickness': (declaration, config) =>
@@ -1860,35 +1216,23 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           'decoration',
           config.remInPx,
           false,
-          'length'
+          'length',
         )
       : [],
 
   'text-indent': (declaration, config) =>
     config.tailwindConfig.corePlugins.textIndent
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.textIndent,
-          'indent',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.textIndent, 'indent', config.remInPx, true)
       : [],
 
   'text-overflow': (declaration, config) =>
     config.tailwindConfig.corePlugins.textOverflow
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['text-overflow']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['text-overflow'])
       : [],
 
   'text-transform': (declaration, config) =>
     config.tailwindConfig.corePlugins.textTransform
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['text-transform']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['text-transform'])
       : [],
 
   'text-underline-offset': (declaration, config) =>
@@ -1899,27 +1243,18 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
           'underline-offset',
           config.remInPx,
           false,
-          'length'
+          'length',
         )
       : [],
 
   top: (declaration, config) =>
     config.tailwindConfig.corePlugins.position
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.inset,
-          'top',
-          config.remInPx,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.inset, 'top', config.remInPx, true)
       : [],
 
   'touch-action': (declaration, config) =>
     config.tailwindConfig.corePlugins.touchAction
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['touch-action']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['touch-action'])
       : [],
 
   transform: (declaration, config) => {
@@ -1930,13 +1265,10 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
     let classes: string[] = [];
 
     function split(value: string) {
-      return value.split(/\s*,\s*/m).map(v => v.trim());
+      return value.split(/\s*,\s*/m).map((v) => v.trim());
     }
 
-    function convertTranslate(
-      value: string,
-      axis: 'x' | 'y' | 'both' = 'both'
-    ): string[] {
+    function convertTranslate(value: string, axis: 'x' | 'y' | 'both' = 'both'): string[] {
       if (axis === 'both') {
         const splitted = split(value);
         return splitted.length > 2
@@ -1947,19 +1279,10 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
             ];
       }
 
-      return convertSizeDeclarationValue(
-        value,
-        config.mapping.translate,
-        `translate-${axis}`,
-        config.remInPx,
-        true
-      );
+      return convertSizeDeclarationValue(value, config.mapping.translate, `translate-${axis}`, config.remInPx, true);
     }
 
-    function convertSkew(
-      value: string,
-      axis: 'x' | 'y' | 'both' = 'both'
-    ): string[] {
+    function convertSkew(value: string, axis: 'x' | 'y' | 'both' = 'both'): string[] {
       if (axis === 'both') {
         const splitted = split(value);
         return splitted.length > 2
@@ -1970,19 +1293,10 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
             ];
       }
 
-      return convertSizeDeclarationValue(
-        value,
-        config.mapping.skew,
-        `skew-${axis}`,
-        config.remInPx,
-        true
-      );
+      return convertSizeDeclarationValue(value, config.mapping.skew, `skew-${axis}`, config.remInPx, true);
     }
 
-    function convertScale(
-      value: string,
-      axis: 'x' | 'y' | 'both' = 'both'
-    ): string[] {
+    function convertScale(value: string, axis: 'x' | 'y' | 'both' = 'both'): string[] {
       if (axis === 'both') {
         const splitted = split(value);
 
@@ -1991,20 +1305,11 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
         }
 
         if (splitted[0]) {
-          return [
-            ...convertScale(splitted[0], 'x'),
-            ...convertScale(splitted[1] || splitted[0], 'y'),
-          ];
+          return [...convertScale(splitted[0], 'x'), ...convertScale(splitted[1] || splitted[0], 'y')];
         }
       }
 
-      return convertSizeDeclarationValue(
-        value,
-        config.mapping.scale,
-        `scale-${axis}`,
-        config.remInPx,
-        true
-      );
+      return convertSizeDeclarationValue(value, config.mapping.scale, `scale-${axis}`, config.remInPx, true);
     }
 
     parseCSSFunctions(declaration.value).every(({ name, value }) => {
@@ -2046,13 +1351,7 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
       }
 
       if (config.tailwindConfig.corePlugins.rotate && name === 'rotate') {
-        converted = convertSizeDeclarationValue(
-          value,
-          config.mapping.rotate,
-          'rotate',
-          config.remInPx,
-          true
-        );
+        converted = convertSizeDeclarationValue(value, config.mapping.rotate, 'rotate', config.remInPx, true);
       }
 
       if (converted.length) {
@@ -2069,11 +1368,7 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
 
   'transform-origin': (declaration, config) =>
     config.tailwindConfig.corePlugins.transformOrigin
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.transformOrigin,
-          'origin'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.transformOrigin, 'origin')
       : [],
 
   transition: (declaration, config) => {
@@ -2082,56 +1377,35 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
 
     removeUnnecessarySpaces(declaration.value.trim())
       .split(/\s+/m)
-      .map(v => v.trim())
+      .map((v) => v.trim())
       .every((value, index) => {
         let itemClasses: string[] = [];
 
         if (index === 0) {
           itemClasses = config.tailwindConfig.corePlugins.transitionProperty
-            ? convertDeclarationValue(
-                value,
-                config.mapping.transitionProperty,
-                'transition'
-              )
+            ? convertDeclarationValue(value, config.mapping.transitionProperty, 'transition')
             : [];
         } else if (index === 1) {
           itemClasses = config.tailwindConfig.corePlugins.transitionDuration
-            ? convertDeclarationValue(
-                value,
-                config.mapping.transitionDuration,
-                'duration'
-              )
+            ? convertDeclarationValue(value, config.mapping.transitionDuration, 'duration')
             : [];
         } else if (index === 2) {
           const isTimingFunction = isNaN(parseFloat(value));
 
           if (isTimingFunction) {
-            itemClasses = config.tailwindConfig.corePlugins
-              .transitionTimingFunction
-              ? convertDeclarationValue(
-                  value,
-                  config.mapping.transitionTimingFunction,
-                  'ease'
-                )
+            itemClasses = config.tailwindConfig.corePlugins.transitionTimingFunction
+              ? convertDeclarationValue(value, config.mapping.transitionTimingFunction, 'ease')
               : [];
           } else {
             hasDelay = true;
             itemClasses = config.tailwindConfig.corePlugins.transitionDelay
-              ? convertDeclarationValue(
-                  value,
-                  config.mapping.transitionDelay,
-                  'delay'
-                )
+              ? convertDeclarationValue(value, config.mapping.transitionDelay, 'delay')
               : [];
           }
         } else if (index === 3) {
           itemClasses =
             config.tailwindConfig.corePlugins.transitionDelay && !hasDelay
-              ? convertDeclarationValue(
-                  value,
-                  config.mapping.transitionDelay,
-                  'delay'
-                )
+              ? convertDeclarationValue(value, config.mapping.transitionDelay, 'delay')
               : [];
 
           hasDelay = true;
@@ -2151,107 +1425,61 @@ export const DECLARATION_CONVERTERS_MAPPING: DeclarationConvertersMapping = {
 
   'transition-delay': (declaration, config) =>
     config.tailwindConfig.corePlugins.transitionDelay
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.transitionDelay,
-          'delay'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.transitionDelay, 'delay')
       : [],
 
   'transition-duration': (declaration, config) =>
     config.tailwindConfig.corePlugins.transitionDuration
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.transitionDuration,
-          'duration'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.transitionDuration, 'duration')
       : [],
 
   'transition-property': (declaration, config) =>
     config.tailwindConfig.corePlugins.transitionProperty
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.transitionProperty,
-          'transition'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.transitionProperty, 'transition')
       : [],
 
   'transition-timing-function': (declaration, config) =>
     config.tailwindConfig.corePlugins.transitionTimingFunction
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.transitionTimingFunction,
-          'ease'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.transitionTimingFunction, 'ease')
       : [],
 
   'user-select': (declaration, config) =>
     config.tailwindConfig.corePlugins.userSelect
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['user-select']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['user-select'])
       : [],
 
   'vertical-align': (declaration, config) =>
     config.tailwindConfig.corePlugins.verticalAlign
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['vertical-align']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['vertical-align'])
       : [],
 
   visibility: (declaration, config) =>
     config.tailwindConfig.corePlugins.visibility
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['visibility']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING.visibility)
       : [],
 
   'white-space': (declaration, config) =>
     config.tailwindConfig.corePlugins.whitespace
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['white-space']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['white-space'])
       : [],
 
   width: (declaration, config) =>
     config.tailwindConfig.corePlugins.width
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.width,
-          'w',
-          config.remInPx
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.width, 'w', config.remInPx)
       : [],
 
   'will-change': (declaration, config) =>
     config.tailwindConfig.corePlugins.willChange
-      ? convertDeclarationValue(
-          declaration.value,
-          config.mapping.willChange,
-          'will-change'
-        )
+      ? convertDeclarationValue(declaration.value, config.mapping.willChange, 'will-change')
       : [],
 
   'word-break': (declaration, config) =>
     config.tailwindConfig.corePlugins.wordBreak
-      ? strictConvertDeclarationValue(
-          declaration.value,
-          UTILITIES_MAPPING['word-break']
-        )
+      ? strictConvertDeclarationValue(declaration.value, UTILITIES_MAPPING['word-break'])
       : [],
 
   'z-index': (declaration, config) =>
     config.tailwindConfig.corePlugins.zIndex
-      ? convertSizeDeclarationValue(
-          declaration.value,
-          config.mapping.zIndex,
-          'z',
-          null,
-          true
-        )
+      ? convertSizeDeclarationValue(declaration.value, config.mapping.zIndex, 'z', null, true)
       : [],
 };

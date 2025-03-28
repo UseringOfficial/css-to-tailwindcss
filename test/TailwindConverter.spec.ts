@@ -1,13 +1,11 @@
-import {
-  TailwindConverter,
-  TailwindConverterConfig,
-} from '../src/TailwindConverter';
+import type { TailwindConverterConfig } from '../src/TailwindConverter';
+import { TailwindConverter } from '../src/TailwindConverter';
 import fs from 'fs';
 import path from 'path';
+import { describe, expect, it } from 'vitest';
+import nested from 'postcss-nested';
 
-const complexCSS: string = fs
-  .readFileSync(path.resolve(__dirname, './fixtures/input.css'))
-  .toString();
+const complexCSS: string = fs.readFileSync(path.resolve(__dirname, './fixtures/input.css')).toString();
 
 const simpleCSS = `
 .foo {
@@ -35,7 +33,7 @@ const simpleCSS = `
 function createTailwindConverter(config?: Partial<TailwindConverterConfig>) {
   return new TailwindConverter({
     remInPx: 16,
-    postCSSPlugins: [require('postcss-nested')],
+    postCSSPlugins: [nested],
     tailwindConfig: {
       content: [],
       theme: {
@@ -224,18 +222,13 @@ describe('TailwindConverter', () => {
   it('should convert the css part string', async () => {
     const converter = createTailwindConverter();
     const converted = await converter.convertCSS(
-      '{ text-align: center; font-size: 12px; &:hover { font-size: 16px; } @media screen and (min-width: 768px) { font-weight: 600; } }'
+      '{ text-align: center; font-size: 12px; &:hover { font-size: 16px; } @media screen and (min-width: 768px) { font-weight: 600; } }',
     );
     expect(converted.convertedRoot.toString()).toMatchSnapshot();
     expect(converted.nodes).toEqual([
       expect.objectContaining({
         rule: expect.objectContaining({ selector: '' }),
-        tailwindClasses: [
-          'text-center',
-          'text-xs',
-          'hover:text-base',
-          'md:font-semibold',
-        ],
+        tailwindClasses: ['text-center', 'text-xs', 'hover:text-base', 'md:font-semibold'],
       }),
     ]);
   });
@@ -243,9 +236,7 @@ describe('TailwindConverter', () => {
   it('should throw an error when converting invalid css string', async () => {
     const converter = createTailwindConverter();
     await expect(
-      converter.convertCSS(
-        'some invalid css string... .some-class { display: block; } ...'
-      )
+      converter.convertCSS('some invalid css string... .some-class { display: block; } ...'),
     ).rejects.toThrow(Error);
   });
 
@@ -400,12 +391,7 @@ describe('TailwindConverter', () => {
       },
       {
         rule: expect.objectContaining({ selector: '.foo' }),
-        tailwindClasses: [
-          'appearance-none',
-          'disabled:opacity-0',
-          'disabled:invisible',
-          'disabled:select-none',
-        ],
+        tailwindClasses: ['appearance-none', 'disabled:opacity-0', 'disabled:invisible', 'disabled:select-none'],
       },
       {
         rule: expect.objectContaining({ selector: '.foo[some-attribute]' }),
@@ -492,14 +478,7 @@ describe('TailwindConverter', () => {
       },
       {
         rule: expect.objectContaining({ selector: '.foo div > [data-zoo]' }),
-        tailwindClasses: [
-          'border',
-          'pl-[25%]',
-          'pr-[1.5em]',
-          'pt-0',
-          'pb-px',
-          'bottom-full',
-        ],
+        tailwindClasses: ['border', 'pl-[25%]', 'pr-[1.5em]', 'pt-0', 'pb-px', 'bottom-full'],
       },
       {
         rule: expect.objectContaining({ selector: '.loving .bar > .testing' }),

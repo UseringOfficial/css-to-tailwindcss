@@ -8,18 +8,18 @@ export function buildMediaQueryByScreen(screens: string | Screen | Screen[]) {
   screens = Array.isArray(screens) ? screens : [screens];
 
   return screens
-    .map(screen => {
-      if ('raw' in screen && screen['raw']) {
-        return screen['raw'];
+    .map((screen) => {
+      if ('raw' in screen && screen.raw) {
+        return screen.raw;
       }
 
-      let conditions = [];
-      if ('min' in screen && screen['min']) {
-        conditions.push(`(min-width: ${screen['min']})`);
+      const conditions = [];
+      if ('min' in screen && screen.min) {
+        conditions.push(`(min-width: ${screen.min})`);
       }
 
-      if ('max' in screen && screen['max']) {
-        conditions.push(`(max-width: ${screen['max']})`);
+      if ('max' in screen && screen.max) {
+        conditions.push(`(max-width: ${screen.max})`);
       }
 
       if (conditions.length) {

@@ -10,18 +10,20 @@ export interface ResolvedTailwindConfig extends Config {
   corePlugins: Expand<Partial<Record<CorePluginList, boolean>>>;
 }
 
-export function resolveConfig(config: Config) {
+export function resolveConfig(config: Config): ResolvedTailwindConfig {
   const resolved = baseResolveConfig(config);
+  // @ts-ignore
   return {
+    content: [],
     ...resolved,
     prefix: resolved.prefix || '',
     separator: resolved.separator || ':',
-    corePlugins: (resolved['corePlugins'] as CorePluginList[]).reduce(
+    corePlugins: (resolved.corePlugins as CorePluginList[]).reduce(
       (prev, current) => {
         prev[current] = true;
         return prev;
       },
-      {} as ResolvedTailwindConfig['corePlugins']
+      {} as ResolvedTailwindConfig['corePlugins'],
     ),
   };
 }

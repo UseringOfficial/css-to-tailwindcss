@@ -5,11 +5,12 @@
     "module": "ESNext",
     "lib": ["ES2023"],
     "moduleResolution": "Bundler",
+    "declaration": true,
     "strict": true,
     "outDir": "dist",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
   },
-  "include": ["src"]
+  "include": ["src"],
 }

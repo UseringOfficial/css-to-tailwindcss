@@ -24,11 +24,13 @@ import { PSEUDOS_MAPPING } from './mappings/pseudos-mapping';
 import { detectIndent } from './utils/detectIndent';
 import type { ResolvedTailwindConfig } from './utils/resolveConfig';
 import { resolveConfig } from './utils/resolveConfig';
+import { twMerge } from 'tailwind-merge';
 
 export interface TailwindConverterConfig {
   remInPx?: number | null;
   tailwindConfig?: Config;
   postCSSPlugins: AcceptedPlugin[];
+  shakeTailwindClasses?: 'tailwind-merge' | 'reduce-manager' | false;
   arbitraryPropertiesIsEnabled: boolean;
 }
 
@@ -39,6 +41,7 @@ export interface ResolvedTailwindConverterConfig extends TailwindConverterConfig
 
 export const DEFAULT_CONVERTER_CONFIG: Omit<TailwindConverterConfig, 'tailwindConfig'> = {
   postCSSPlugins: [],
+  shakeTailwindClasses: 'tailwind-merge',
   arbitraryPropertiesIsEnabled: false,
 };
 
@@ -59,10 +62,17 @@ export class TailwindConverter {
   async convertCSS(css: string) {
     const nodesManager = new TailwindNodesManager();
     const parsed = await postcss(this.config.postCSSPlugins).process(css, {
+      from: undefined,
+      map: false,
       parser: postcssSafeParser,
     });
 
     parsed.root.walkRules((rule) => {
+      // Skip rules inside @keyframes
+      if (rule.parent?.type === 'atrule' && (rule.parent as AtRule).name === 'keyframes') {
+        return;
+      }
+
       const converted = this.convertRule(rule);
       if (converted) {
         nodesManager.mergeNode(converted);
@@ -122,7 +132,16 @@ export class TailwindConverter {
     });
 
     if (tailwindClasses.length) {
-      tailwindClasses = reduceTailwindClasses(tailwindClasses);
+      switch (this.config.shakeTailwindClasses) {
+        case 'reduce-manager':
+          tailwindClasses = reduceTailwindClasses(tailwindClasses);
+          break;
+        case 'tailwind-merge':
+          tailwindClasses = twMerge(tailwindClasses).split(' ');
+          break;
+        case false:
+          break;
+      }
 
       if (this.config.tailwindConfig.prefix) {
         tailwindClasses = tailwindClasses.map((className) =>

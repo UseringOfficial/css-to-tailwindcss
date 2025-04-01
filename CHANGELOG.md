@@ -1,3 +1,7 @@
+## <small>1.0.1 (2025-04-01)</small>
+
+* fix: add dts files and repair package.json exports ([a7a9be1](https://github.com/UseringOfficial/css-to-tailwindcss/commit/a7a9be1))
+
 ## 1.0.0 (2025-04-01)
 
 * chore: change copyright holder ([0bf17d5](https://github.com/UseringOfficial/css-to-tailwindcss/commit/0bf17d5))

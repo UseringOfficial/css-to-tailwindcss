@@ -22,6 +22,7 @@
     "lint": "eslint src",
     "prepare": "is-ci || husky",
     "semantic-release": "semantic-release",
+    "prepublishOnly": "pnpm run build",
     "test:watch": "vitest watch",
     "test": "vitest run --coverage"
   },

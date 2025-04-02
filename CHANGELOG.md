@@ -1,3 +1,8 @@
+## <small>1.0.3 (2025-04-02)</small>
+
+* chore: build before publish ([7ef6c0b](https://github.com/UseringOfficial/css-to-tailwindcss/commit/7ef6c0b))
+* fix: add isTailwindLikeClass (not enabled) ([b2d4d28](https://github.com/UseringOfficial/css-to-tailwindcss/commit/b2d4d28))
+
 ## <small>1.0.2 (2025-04-02)</small>
 
 * fix: catch parseSelector error, skip keyframes with vendor prefixes ([36c1a9c](https://github.com/UseringOfficial/css-to-tailwindcss/commit/36c1a9c))

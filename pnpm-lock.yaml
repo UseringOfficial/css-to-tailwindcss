@@ -20,6 +20,9 @@ importers:
       postcss-safe-parser:
         specifier: ^6.0.0
         version: 6.0.0(postcss@8.5.3)
+      radashi:
+        specifier: ^12.4.0
+        version: 12.4.0
       tailwind-merge:
         specifier: ^2.6.0
         version: 2.6.0
@@ -3286,6 +3289,10 @@ packages:
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
+
+  radashi@12.4.0:
+    resolution: {integrity: sha512-kFJ5Q9B1svHamYfHRQ2EhfLOJRCr+0S9xvluGESadGAs3UvLSaYyxClL+fm/t2H4WPIwWJ0q0eRaZdghovsl2A==}
+    engines: {node: '>=16.0.0'}
 
   rc@1.2.8:
     resolution: {integrity: sha512-y3bGgqKj3QBdxLbLkomlohkvsA8gdAiUQlSBJnBhfn+BPxg4bc62d8TcBW15wavDfgexCgccckhcZvywyQYPOw==}
@@ -7455,6 +7462,8 @@ snapshots:
     optional: true
 
   queue-microtask@1.2.3: {}
+
+  radashi@12.4.0: {}
 
   rc@1.2.8:
     dependencies:

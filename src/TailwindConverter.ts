@@ -25,6 +25,7 @@ import { detectIndent } from './utils/detectIndent';
 import type { ResolvedTailwindConfig } from './utils/resolveConfig';
 import { resolveConfig } from './utils/resolveConfig';
 import { twMerge } from 'tailwind-merge';
+import { guard } from 'radashi';
 
 export interface TailwindConverterConfig {
   remInPx?: number | null;
@@ -69,7 +70,7 @@ export class TailwindConverter {
 
     parsed.root.walkRules((rule) => {
       // Skip rules inside @keyframes
-      if (rule.parent?.type === 'atrule' && (rule.parent as AtRule).name === 'keyframes') {
+      if (rule.parent?.type === 'atrule' && (rule.parent as AtRule).name.endsWith('keyframes')) {
         return;
       }
 
@@ -168,7 +169,10 @@ export class TailwindConverter {
   }
 
   protected makeTailwindNode(rule: Rule, tailwindClasses: string[]): TailwindNode {
-    const { baseSelector, classPrefix } = this.parseSelector(rule.selector);
+    const { baseSelector, classPrefix } = guard(() => this.parseSelector(rule.selector)) ?? {
+      baseSelector: rule.selector,
+      classPrefix: '',
+    };
 
     const classPrefixByParentNodes = this.convertContainerToClassPrefix(rule.parent);
 

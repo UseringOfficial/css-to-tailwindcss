@@ -68,11 +68,34 @@ export class TailwindConverter {
       parser: postcssSafeParser,
     });
 
+    // const isTailwindSelectorCheckResult = new Map<string, boolean>();
+
     parsed.root.walkRules((rule) => {
       // Skip rules inside @keyframes
       if (rule.parent?.type === 'atrule' && (rule.parent as AtRule).name.endsWith('keyframes')) {
         return;
       }
+
+      // TODO: 完善 isTailwindLikeClass 逻辑后放开
+      // // 如果选择器本身就 tailwindcss 的，则跳过不处理
+      // if (rule.selectors.length === 1) {
+      //   const selector = rule.selector;
+
+      //   if (!isTailwindSelectorCheckResult.has(selector)) {
+      //     const paredSelector = guard(() => parse(rule.selector)[0]) ?? [];
+      //     const result =
+      //       paredSelector.length === 1 &&
+      //       paredSelector[0].type === SelectorType.Attribute &&
+      //       paredSelector[0].name === 'class' &&
+      //       isTailwindLikeClass(paredSelector[0].value);
+
+      //     isTailwindSelectorCheckResult.set(rule.selector, result);
+      //   }
+
+      //   if (isTailwindSelectorCheckResult.get(selector)) {
+      //     return;
+      //   }
+      // }
 
       const converted = this.convertRule(rule);
       if (converted) {

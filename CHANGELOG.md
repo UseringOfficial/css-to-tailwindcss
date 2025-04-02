@@ -1,3 +1,8 @@
+## <small>1.0.2 (2025-04-02)</small>
+
+* fix: catch parseSelector error, skip keyframes with vendor prefixes ([36c1a9c](https://github.com/UseringOfficial/css-to-tailwindcss/commit/36c1a9c))
+* chore: output sourceMap ([818f66a](https://github.com/UseringOfficial/css-to-tailwindcss/commit/818f66a))
+
 ## <small>1.0.1 (2025-04-01)</small>
 
 * fix: add dts files and repair package.json exports ([a7a9be1](https://github.com/UseringOfficial/css-to-tailwindcss/commit/a7a9be1))

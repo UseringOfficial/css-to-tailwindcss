@@ -284,7 +284,8 @@ export class DocumentTailwindConverter {
       });
 
       // 兼容 HTMLElement 和 SVGElement
-      node.setAttribute('class', node.className + ' ' + classes);
+      const className = node.getAttribute('class');
+      node.setAttribute('class', className + ' ' + classes);
     }
   }
 }

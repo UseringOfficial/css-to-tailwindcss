@@ -1,3 +1,7 @@
+## 1.1.0 (2025-07-08)
+
+* feat: add document converter ([a6c12bd](https://github.com/UseringOfficial/css-to-tailwindcss/commit/a6c12bd))
+
 ## <small>1.0.3 (2025-04-02)</small>
 
 * chore: build before publish ([7ef6c0b](https://github.com/UseringOfficial/css-to-tailwindcss/commit/7ef6c0b))

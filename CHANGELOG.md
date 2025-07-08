@@ -1,3 +1,7 @@
+## <small>1.1.1 (2025-07-08)</small>
+
+* fix: get class name by class attribute ([ff14cd8](https://github.com/UseringOfficial/css-to-tailwindcss/commit/ff14cd8))
+
 ## 1.1.0 (2025-07-08)
 
 * feat: add document converter ([a6c12bd](https://github.com/UseringOfficial/css-to-tailwindcss/commit/a6c12bd))

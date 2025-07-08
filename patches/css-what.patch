@@ -1,0 +1,13 @@
+diff --git a/dist/esm/stringify.js b/dist/esm/stringify.js
+index aad44902cb5ce5f71302e5370eabb8f2c54c462e..8339338c4e265e3b22476065cb9871515881b72f 100644
+--- a/dist/esm/stringify.js
++++ b/dist/esm/stringify.js
+@@ -18,6 +18,8 @@ const charsToEscapeInName = new Set([
+     " ",
+     ".",
+     "%",
++    "/",
++    ","
+ ].map((c) => c.charCodeAt(0)));
+ /**
+  * Turns `selector` back into a string.

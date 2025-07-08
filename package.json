@@ -16,34 +16,20 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf ./lib/",
+    "build": "tsdown",
     "cm": "cz",
     "lint": "eslint src",
     "prepare": "is-ci || husky",
     "semantic-release": "semantic-release",
     "prepublishOnly": "pnpm run build",
     "test:watch": "vitest watch",
-    "test": "vitest run --coverage"
+    "test": "vitest"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/UseringOfficial/css-to-tailwindcss.git"
   },
   "license": "MIT",
-  "engines": {
-    "node": ">=20.0"
-  },
-  "keywords": [
-    "convert",
-    "converter",
-    "conversion",
-    "css",
-    "postcss",
-    "tailwind",
-    "tailwindcss",
-    "css-to-tailwind"
-  ],
   "bugs": {
     "url": "https://github.com/UseringOfficial/css-to-tailwindcss/issues"
   },
@@ -68,21 +54,30 @@
     "husky": "^9.1.7",
     "is-ci": "^4.1.0",
     "lint-staged": "^15.5.0",
-    "postcss-nested": "^6.0.0",
     "prettier": "^3.5.3",
     "semantic-release": "^24.2.3",
+    "tsdown": "^0.12.9",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
+    "vite": "^7.0.2",
     "vitest": "^3.0.9"
   },
   "dependencies": {
     "colord": "^2.9.3",
-    "css-what": "^6.1.0",
-    "postcss": "^8.5.3",
-    "postcss-safe-parser": "^6.0.0",
-    "radashi": "^12.4.0",
+    "css-what": "^7.0.0",
+    "postcss": "^8.5.6",
+    "postcss-nested": "^7.0.2",
+    "postcss-safe-parser": "^7.0.1",
+    "postcss-selector-parser": "^7.1.0",
+    "radashi": "^12.6.0",
+    "specificity": "^1.0.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss": "^3.4.17"
   },
-  "packageManager": "pnpm@9.15.5+sha512.845196026aab1cc3f098a0474b64dfbab2afe7a1b4e91dd86895d8e4aa32a7a6d03049e2d0ad770bbe4de023a7122fb68c1a1d6e0d033c7076085f9d5d4800d4"
+  "pnpm": {
+    "patchedDependencies": {
+      "css-what": "patches/css-what.patch"
+    }
+  },
+  "packageManager": "pnpm@10.12.4+sha512.5ea8b0deed94ed68691c9bad4c955492705c5eeb8a87ef86bc62c74a26b037b08ff9570f108b2e4dbd1dd1a9186fea925e527f141c648e85af45631074680184"
 }

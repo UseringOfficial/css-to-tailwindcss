@@ -3,7 +3,7 @@ import type { Container } from 'postcss';
 export function detectIndent(root: Container<any>) {
   if (root.raws.indent) return root.raws.indent;
 
-  let detectedIndent = '    ';
+  let detectedIndent = '  ';
   root.walk((node) => {
     const p = node.parent;
     if (p && p !== root && p.parent && p.parent === root) {

@@ -27,14 +27,7 @@ export function isUnresolvedTailwindNode(node: TailwindNode): node is Unresolved
 }
 
 export class TailwindNodesManager {
-  protected nodesMap: Map<string, ResolvedTailwindNode>;
-
-  constructor(initialNodes?: TailwindNode[]) {
-    this.nodesMap = new Map();
-    if (initialNodes?.length) {
-      this.mergeNodes(initialNodes);
-    }
-  }
+  protected nodesMap: Map<string, ResolvedTailwindNode> = new Map();
 
   mergeNode(node: TailwindNode) {
     const nodeIsResolved = isResolvedTailwindNode(node);

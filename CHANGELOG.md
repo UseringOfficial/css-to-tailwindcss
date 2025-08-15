@@ -1,3 +1,7 @@
+## <small>1.1.4 (2025-08-15)</small>
+
+* fix: catch if selector error in convertByElement ([ba2b0f5](https://github.com/UseringOfficial/css-to-tailwindcss/commit/ba2b0f5))
+
 ## <small>1.1.3 (2025-08-15)</small>
 
 * fix: improves selector matching efficiency with caching ([8dcf433](https://github.com/UseringOfficial/css-to-tailwindcss/commit/8dcf433))

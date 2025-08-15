@@ -1,3 +1,7 @@
+## <small>1.1.2 (2025-08-15)</small>
+
+* fix: try catch fetch link style error ([a33ca2e](https://github.com/UseringOfficial/css-to-tailwindcss/commit/a33ca2e))
+
 ## <small>1.1.1 (2025-07-08)</small>
 
 * fix: get class name by class attribute ([ff14cd8](https://github.com/UseringOfficial/css-to-tailwindcss/commit/ff14cd8))

@@ -1,3 +1,7 @@
+## <small>1.1.3 (2025-08-15)</small>
+
+* fix: improves selector matching efficiency with caching ([8dcf433](https://github.com/UseringOfficial/css-to-tailwindcss/commit/8dcf433))
+
 ## <small>1.1.2 (2025-08-15)</small>
 
 * fix: try catch fetch link style error ([a33ca2e](https://github.com/UseringOfficial/css-to-tailwindcss/commit/a33ca2e))

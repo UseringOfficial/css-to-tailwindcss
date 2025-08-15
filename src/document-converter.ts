@@ -85,12 +85,18 @@ export class DocumentSelectorConverter {
       if (!this.selectorElementsSetCache.has(selector)) {
         const set = new Set<Element>();
 
-        this.doc.querySelectorAll(selector.noPseudoSelector).forEach((element) => {
-          set.add(element);
-        });
-        this.doc.querySelectorAll(selector.selector).forEach((element) => {
-          set.add(element);
-        });
+        try {
+          this.doc.querySelectorAll(selector.noPseudoSelector).forEach((element) => {
+            set.add(element);
+          });
+        } catch {}
+
+        try {
+          this.doc.querySelectorAll(selector.selector).forEach((element) => {
+            set.add(element);
+          });
+        } catch {}
+
         this.selectorElementsSetCache.set(selector, set);
       }
 

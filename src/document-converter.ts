@@ -72,6 +72,9 @@ const EXCLUDE_SELECTORS = ['*', ':before', ':after', ':root', '::backdrop'];
 
 export class DocumentSelectorConverter {
   private selectors: ResolvedSelector[] = [];
+  private selectorElementsSetCache = new Map<ResolvedSelector, Set<Element>>();
+
+  constructor(private doc: Document) {}
 
   pushResolvedSelectors(selectors: ResolvedSelector[]) {
     this.selectors = [...this.selectors, ...selectors].sort(compareSelector);
@@ -79,31 +82,31 @@ export class DocumentSelectorConverter {
 
   convertByElement(element: Element) {
     const effectiveSelectors = this.selectors.filter((selector) => {
-      const [noPseudoSelectorError, noPseudoSelectorMatched] = tryit(() =>
-        element.matches(selector.noPseudoSelector),
-      )();
+      if (!this.selectorElementsSetCache.has(selector)) {
+        const set = new Set<Element>();
 
-      if (!noPseudoSelectorError) {
-        return noPseudoSelectorMatched;
+        this.doc.querySelectorAll(selector.noPseudoSelector).forEach((element) => {
+          set.add(element);
+        });
+        this.doc.querySelectorAll(selector.selector).forEach((element) => {
+          set.add(element);
+        });
+        this.selectorElementsSetCache.set(selector, set);
       }
 
-      const [selectorError, selectorMatched] = tryit(() => element.matches(selector.selector))();
-
-      if (!selectorError) {
-        return selectorMatched;
-      }
-
-      return false;
+      const selectorElementsSet = this.selectorElementsSetCache.get(selector)!;
+      return selectorElementsSet.has(element);
     });
 
     const classes = effectiveSelectors.map((selector) => selector.tailwindClasses);
 
-    return twMerge(classes);
+    const result = twMerge(classes);
+    return result;
   }
 }
 
 export class DocumentTailwindConverter {
-  private selectorConverter = new DocumentSelectorConverter();
+  private selectorConverter: DocumentSelectorConverter;
 
   private remainedClasses: Set<string> = new Set();
 
@@ -112,7 +115,9 @@ export class DocumentTailwindConverter {
     private options: {
       baseFontSize: number;
     },
-  ) {}
+  ) {
+    this.selectorConverter = new DocumentSelectorConverter(doc);
+  }
 
   private convertCSSRuleFilter(rule: Rule) {
     const root = postcssSelectorParser().astSync(rule.selector);

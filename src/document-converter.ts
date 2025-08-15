@@ -243,23 +243,27 @@ export class DocumentTailwindConverter {
           continue;
         }
 
-        const response = await fetch(linkHref);
-        const css = await response.text();
+        try {
+          const response = await fetch(linkHref);
+          const css = await response.text();
 
-        if (css.trim() === '') {
+          if (css.trim() === '') {
+            tag.remove();
+          }
+
+          const { selectors, remained } = await this.parseCSS(css, tagIndex, tailwindConverter);
+          this.selectorConverter.pushResolvedSelectors(selectors);
+
+          if (remained) {
+            const replaceStyleTag = doc.createElement('style');
+            replaceStyleTag.innerHTML = remained;
+            tag.after(replaceStyleTag);
+          }
+        } catch (err) {
+          // ignore
+        } finally {
           tag.remove();
         }
-
-        const { selectors, remained } = await this.parseCSS(css, tagIndex, tailwindConverter);
-        this.selectorConverter.pushResolvedSelectors(selectors);
-
-        if (remained) {
-          const replaceStyleTag = doc.createElement('style');
-          replaceStyleTag.innerHTML = remained;
-          tag.after(replaceStyleTag);
-        }
-
-        tag.remove();
       }
     }
 
